@@ -1,0 +1,19 @@
+---
+import GridPage from './GridPage.astro';
+import PageLayout from './PageLayout.astro';
+import SupportBanner from './SupportBanner.astro';
+import { videosByLocale } from '../data/videos';
+import { type Locale, ui } from '../lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const labels = ui[locale];
+---
+
+<PageLayout locale={locale}>
+  <SupportBanner locale={locale} section="video" />
+  <GridPage cards={videosByLocale[locale]} variant="video" ariaLabel={labels.nav.video} videoTitle={labels.videoFrameTitle} />
+</PageLayout>

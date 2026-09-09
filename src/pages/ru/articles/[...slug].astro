@@ -1,0 +1,18 @@
+---
+import ArticlePage from '../../../components/ArticlePage.astro';
+import { getArticleId, getOrderedArticles } from '../../../lib/articles';
+
+export async function getStaticPaths() {
+  const locale = 'ru' as const;
+  const articles = await getOrderedArticles(locale);
+  return articles.map((entry) => ({
+    params: { slug: getArticleId(entry) },
+    props: { entry },
+  }));
+}
+
+const locale = 'ru' as const;
+const { entry } = Astro.props;
+---
+
+<ArticlePage locale={locale} entry={entry} />

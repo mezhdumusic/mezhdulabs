@@ -1,0 +1,19 @@
+---
+import GridPage from './GridPage.astro';
+import PageLayout from './PageLayout.astro';
+import SupportBanner from './SupportBanner.astro';
+import { musicCards } from '../data/music';
+import { type Locale, ui } from '../lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const labels = ui[locale];
+---
+
+<PageLayout locale={locale}>
+  <SupportBanner locale={locale} section="music" />
+  <GridPage cards={musicCards} variant="music" ariaLabel={labels.nav.music} />
+</PageLayout>

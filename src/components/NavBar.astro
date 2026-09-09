@@ -1,0 +1,204 @@
+---
+import { getCollection } from 'astro:content';
+import { getArticleId } from '../lib/articles';
+import {
+  getLocaleSwitchPath,
+  localizePath,
+  ui,
+  type Locale,
+} from '../lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const labels = ui[locale];
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+const otherLocale: Locale = locale === 'ru' ? 'en' : 'ru';
+const articleEntries = await getCollection('articles');
+const otherArticleIds = new Set(
+  articleEntries
+    .filter((entry) => entry.id.startsWith(`${otherLocale}/`))
+    .map(getArticleId),
+);
+const languagePath = getLocaleSwitchPath(Astro.url.pathname, locale, otherLocale, otherArticleIds);
+const items = [
+  { label: labels.nav.articles, path: localizePath(locale) },
+  { label: labels.nav.video, path: localizePath(locale, 'video') },
+  { label: labels.nav.music, path: localizePath(locale, 'music') },
+];
+const activeIndex = Math.max(items.findIndex((item) => item.path === currentPath), 0);
+---
+
+<header class="site-header" data-navbar>
+  <div class="nav-shell">
+    <a class="brand" href={localizePath(locale)} aria-label={labels.brandHome}>
+      <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Mezhduly Labs" />
+    </a>
+
+    <button class="mobile-menu-toggle" type="button" aria-label={labels.openNavigation} aria-expanded="false" data-open-label={labels.openNavigation} data-close-label={labels.closeNavigation}>
+      <span></span><span></span>
+    </button>
+
+    <nav class="primary-nav" aria-label={labels.nav.primary} style={`--active-index: ${activeIndex}`}>
+      <span class="active-indicator" aria-hidden="true"></span>
+      {items.map((item) => (
+        <a class:list={['nav-link', item.path === currentPath && 'is-active']} href={item.path} data-path={item.path} aria-current={item.path === currentPath ? 'page' : undefined}>
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="controls">
+      <div class="language-switcher" role="group" aria-label={labels.language}>
+        <a class:list={['language-button', locale === 'en' && 'is-active']} href={locale === 'en' ? currentPath : languagePath} hreflang="en" aria-current={locale === 'en' ? 'page' : undefined} aria-label={labels.switchLanguageTo.en}>EN</a>
+        <span class="language-divider" aria-hidden="true">|</span>
+        <a class:list={['language-button', locale === 'ru' && 'is-active']} href={locale === 'ru' ? currentPath : languagePath} hreflang="ru" aria-current={locale === 'ru' ? 'page' : undefined} aria-label={labels.switchLanguageTo.ru}>RU</a>
+      </div>
+
+      <button
+        class="theme-toggle"
+        type="button"
+        aria-label={labels.theme.switchToDark}
+        aria-pressed="false"
+        data-switch-to-dark={labels.theme.switchToDark}
+        data-switch-to-light={labels.theme.switchToLight}
+      >
+        <span class="theme-option theme-option-moon">
+          <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 15.5A8 8 0 0 1 8.5 4.6 8 8 0 1 0 19.4 15.5Z" /></svg>
+        </span>
+        <span class="theme-option theme-option-sun">
+          <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5" /><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" /></svg>
+        </span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<script>
+  const navbar = document.querySelector<HTMLElement>('[data-navbar]');
+
+  if (navbar) {
+    const nav = navbar.querySelector<HTMLElement>('.primary-nav');
+    const links = [...navbar.querySelectorAll<HTMLAnchorElement>('.nav-link')];
+    const themeToggle = navbar.querySelector<HTMLButtonElement>('.theme-toggle');
+    const mobileMenuToggle = navbar.querySelector<HTMLButtonElement>('.mobile-menu-toggle');
+
+    const setMobileMenu = (isOpen: boolean) => {
+      navbar.classList.toggle('is-menu-open', isOpen);
+      mobileMenuToggle?.setAttribute('aria-expanded', String(isOpen));
+      mobileMenuToggle?.setAttribute('aria-label', isOpen ? (mobileMenuToggle.dataset.closeLabel ?? 'Close navigation') : (mobileMenuToggle.dataset.openLabel ?? 'Open navigation'));
+      document.body.classList.toggle('menu-is-open', isOpen);
+    };
+
+    const setActivePage = (path: string) => {
+      const normalizedPath = path.replace(/\/$/, '') || '/';
+      const activeLink = links.find((link) => link.dataset.path === normalizedPath) ?? links[0];
+      links.forEach((link) => {
+        const isActive = link === activeLink;
+        link.classList.toggle('is-active', isActive);
+        if (isActive) link.setAttribute('aria-current', 'page');
+        else link.removeAttribute('aria-current');
+      });
+      nav?.style.setProperty('--active-index', String(Math.max(links.indexOf(activeLink), 0)));
+    };
+
+    const setTheme = (theme: 'light' | 'dark') => {
+      document.documentElement.dataset.theme = theme;
+      themeToggle?.setAttribute('aria-pressed', String(theme === 'dark'));
+      themeToggle?.setAttribute('aria-label', theme === 'dark' ? (themeToggle.dataset.switchToLight ?? 'Switch to light theme') : (themeToggle.dataset.switchToDark ?? 'Switch to dark theme'));
+      localStorage.setItem('theme', theme);
+    };
+
+    setActivePage(window.location.pathname);
+    setTheme((localStorage.getItem('theme') as 'light' | 'dark' | null) ?? 'light');
+
+    links.forEach((link) => link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const path = link.dataset.path ?? '/';
+      if (path === window.location.pathname.replace(/\/$/, '') || (path === '/' && window.location.pathname === '/')) {
+        setMobileMenu(false);
+        return;
+      }
+      setActivePage(path);
+      setMobileMenu(false);
+      window.setTimeout(() => { window.location.href = path; }, 250);
+    }));
+
+    themeToggle?.addEventListener('click', () => {
+      setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+
+    mobileMenuToggle?.addEventListener('click', () => {
+      setMobileMenu(!navbar.classList.contains('is-menu-open'));
+    });
+
+    window.addEventListener('popstate', () => setActivePage(window.location.pathname));
+  }
+</script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sofia+Sans+Semi+Condensed:wght@400;500&display=swap');
+
+  :global(:root) { --nav-ink: #111; --nav-muted: rgb(17 17 17 / 50%); --nav-surface: #fff; --nav-border: #e8e8e8; }
+  :global(:root[data-theme='dark']) { --nav-ink: #f5f5f5; --nav-muted: rgb(245 245 245 / 50%); --nav-surface: #121212; --nav-border: #2c2c2c; }
+
+  .site-header { position: fixed; top: 0; left: 0; z-index: 100; width: 100%; height: 65px; border-bottom: 1px solid var(--nav-border); background: var(--nav-surface); color: var(--nav-ink); font-family: 'Sofia Sans Semi Condensed', sans-serif; transition: background-color 180ms ease, color 180ms ease; }
+  .nav-shell { position: relative; display: flex; align-items: center; justify-content: space-between; width: min(100% - 40px, 1440px); height: 100%; margin: 0 auto; }
+  .brand { display: inline-flex; align-items: center; width: 100px; height: 65px; }
+  .brand img { display: block; width: 146px; height: auto; }
+  :global(:root[data-theme='dark']) .brand img { filter: invert(1); }
+  .mobile-menu-toggle { display: none; }
+  .primary-nav { position: absolute; bottom: 0; left: 50%; display: flex; gap: 48px; height: 56px; transform: translateX(-50%); --active-index: 0; }
+  .nav-link { position: relative; display: grid; place-items: center; width: 220px; height: 56px; color: var(--nav-muted); font-size: 1rem; font-weight: 400; letter-spacing: .24em; text-decoration: none; transition: color 180ms ease; }
+  .nav-link.is-active { color: var(--nav-ink); }
+  .active-indicator { position: absolute; bottom: 0; left: 0; z-index: 1; width: 16px; height: 2px; background: var(--nav-ink); transform: translateX(calc(var(--active-index) * (220px + 48px) + 102px)); transition: transform 240ms cubic-bezier(.4, 0, .2, 1), background-color 180ms ease; }
+  .controls { display: flex; align-items: center; gap: 27px; }
+  .language-switcher { display: flex; align-items: center; gap: 18px; font-size: .875rem; }
+  .language-button, .theme-toggle { border: 0; background: transparent; color: var(--nav-muted); font: inherit; cursor: pointer; }
+  .language-button { padding: 4px 0; letter-spacing: .04em; }
+  .language-button.is-active { color: var(--nav-ink); }
+  .language-divider { color: var(--nav-ink); }
+  .theme-toggle { display: inline-flex; align-items: center; justify-content: space-between; width: 68px; height: 36px; padding: 3px; border-radius: 999px; background: #f1f1f1; color: #111; }
+  .theme-option { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; color: rgb(17 17 17 / 50%); transition: background-color 180ms ease, color 180ms ease; }
+  .theme-option .theme-icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+  .theme-option-moon { background: transparent; color: rgb(17 17 17 / 50%); }
+  .theme-option-sun { background: #fff; color: #111; }
+  :global(:root[data-theme='dark']) .theme-option-moon { background: #fff; color: #111; }
+  :global(:root[data-theme='dark']) .theme-option-sun { background: transparent; color: rgb(17 17 17 / 50%); }
+  :global(:root[data-theme='dark']) .theme-toggle { background: #292929; color: #f5f5f5; }
+  :global(:root[data-theme='dark']) .theme-option-moon { background: #3b3b3b; color: #fff; }
+  :global(:root[data-theme='dark']) .theme-option-sun { color: rgb(245 245 245 / 50%); }
+
+  @media (max-width: 1100px) {
+    .primary-nav { gap: 12px; }
+    .nav-link { width: 150px; }
+    .active-indicator { transform: translateX(calc(var(--active-index) * (150px + 12px) + 67px)); }
+  }
+
+  @media (max-width: 760px) {
+    .site-header { height: 65px; }
+    .nav-shell { width: 100%; }
+    .brand { position: absolute; top: 0; left: 50%; width: auto; height: 65px; transform: translateX(-50%); }
+    .brand img { width: 116px; }
+    .mobile-menu-toggle { position: absolute; top: 14px; right: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 36px; height: 36px; gap: 6px; padding: 0; border: 0; outline: none; background: transparent; color: var(--nav-ink); cursor: pointer; }
+    .mobile-menu-toggle:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
+    .mobile-menu-toggle span { display: block; width: 18px; height: 2px; background: currentColor; transition: transform 240ms ease, opacity 180ms ease; }
+    .primary-nav, .controls { display: none; }
+
+    .site-header.is-menu-open { height: 100svh; min-height: 620px; }
+    .site-header.is-menu-open .nav-shell { height: 100svh; min-height: 620px; }
+    .site-header.is-menu-open .primary-nav { position: absolute; top: 31%; left: 0; display: flex; flex-direction: column; align-items: center; gap: 50px; width: 100%; height: auto; transform: none; }
+    .site-header.is-menu-open .nav-link { width: auto; height: 56px; padding: 0; font-size: 1rem; letter-spacing: .24em; }
+    .site-header.is-menu-open .nav-link.is-active::after { content: ''; position: absolute; bottom: -18px; left: 50%; width: 16px; height: 2px; background: var(--nav-ink); transform: translateX(-50%); }
+    .site-header.is-menu-open .active-indicator { display: none; }
+    .site-header.is-menu-open .controls { position: absolute; bottom: 34px; left: 0; display: flex; justify-content: center; width: 100%; gap: 28px; }
+    .language-switcher { gap: 18px; font-size: .875rem; }
+    .theme-toggle { width: 68px; height: 36px; gap: 9px; padding: 3px; }
+    .theme-option { width: 30px; height: 30px; }
+    .theme-option .theme-icon { width: 18px; height: 18px; }
+    .site-header.is-menu-open .mobile-menu-toggle span:nth-child(1) { transform: translateY(4px) rotate(45deg); }
+    .site-header.is-menu-open .mobile-menu-toggle span:nth-child(2) { transform: translateY(-4px) rotate(-45deg); }
+  }
+</style>

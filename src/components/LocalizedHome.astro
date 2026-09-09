@@ -1,0 +1,37 @@
+---
+import GridPage from './GridPage.astro';
+import PageLayout from './PageLayout.astro';
+import {
+  createExcerpt,
+  formatArticleDate,
+  formatReadingTime,
+  getArticleId,
+  getOrderedArticles,
+  getReadingTime,
+} from '../lib/articles';
+import SupportBanner from './SupportBanner.astro';
+import { articlePath, type Locale, ui } from '../lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const labels = ui[locale];
+const articles = await getOrderedArticles(locale);
+const cards = articles.map((article) => ({
+  date: formatArticleDate(article.data.date, locale),
+  title: article.data.title,
+  excerpt: createExcerpt(article.body ?? '', 200),
+  readingTime: formatReadingTime(getReadingTime(article.body ?? ''), locale),
+  shareLabel: labels.share,
+  shareCopiedLabel: labels.linkCopied,
+  shareFailedLabel: labels.copyFailed,
+  href: articlePath(locale, getArticleId(article)),
+}));
+---
+
+<PageLayout locale={locale}>
+  <SupportBanner locale={locale} section="articles" />
+  <GridPage cards={cards} ariaLabel={labels.content} />
+</PageLayout>

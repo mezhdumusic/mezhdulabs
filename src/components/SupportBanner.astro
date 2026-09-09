@@ -1,0 +1,70 @@
+---
+import type { Locale } from '../lib/i18n';
+
+interface Props {
+  locale: Locale;
+  section: 'articles' | 'music' | 'video';
+}
+
+const { locale, section } = Astro.props;
+const sectionNames = {
+  ru: {
+    articles: 'Статьи',
+    music: 'Музыка',
+    video: 'Видео',
+  },
+  en: {
+    articles: 'Articles',
+    music: 'Music',
+    video: 'Videos',
+  },
+} as const;
+const sectionName = sectionNames[locale][section];
+const isMusic = section === 'music';
+const platform = locale === 'ru'
+  ? { name: 'Boosty', url: 'https://boosty.to/' }
+  : { name: 'Patreon', url: 'https://www.patreon.com/' };
+---
+
+<aside class="support-banner" aria-label={`${platform.name} support`}>
+  {locale === 'ru' ? (
+    <>
+      {sectionName} из этой секции {isMusic ? 'выходит' : 'выходят'} раньше на{' '}
+      <a href={platform.url} target="_blank" rel="noopener noreferrer">{platform.name}</a>.
+      Подпишитесь, если хотите поддержать автора и получить доступ к ранним материалам.
+    </>
+  ) : (
+    <>
+      {sectionName} from this section {isMusic ? 'is released' : 'are released'} earlier on{' '}
+      <a href={platform.url} target="_blank" rel="noopener noreferrer">{platform.name}</a>.
+      Subscribe if you want to support the author and get access to early content.
+    </>
+  )}
+  </aside>
+
+<style>
+  .support-banner {
+    width: min(100% - 40px, 680px);
+    margin: 74px auto 0;
+    color: var(--site-ink);
+    font-size: 1.5rem !important;
+    line-height: 1.08;
+    text-align: center;
+  }
+
+  .support-banner a {
+    color: #328f7d;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .support-banner a:hover {
+    color: #247363;
+  }
+
+  @media (max-width: 740px) {
+    .support-banner {
+      margin-top: 42px;
+    }
+  }
+</style>

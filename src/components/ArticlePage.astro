@@ -1,0 +1,63 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import PageLayout from './PageLayout.astro';
+import ShareButton from './ShareButton.astro';
+import { formatArticleDate, formatReadingTime, getReadingTime } from '../lib/articles';
+import { type Locale, ui } from '../lib/i18n';
+
+interface Props {
+  locale: Locale;
+  entry: CollectionEntry<'articles'>;
+}
+
+const { locale, entry } = Astro.props;
+const labels = ui[locale];
+const { Content } = await render(entry);
+const date = formatArticleDate(entry.data.date, locale);
+const readingTime = formatReadingTime(getReadingTime(entry.body ?? ''), locale);
+---
+
+<PageLayout locale={locale}>
+  <div class="article-page">
+    <article class="article-content">
+      <h1>{entry.data.title}</h1>
+      <div class="article-divider" aria-hidden="true"></div>
+      <div class="article-meta">
+        <span class="article-meta-text">
+          <time datetime={entry.data.date.toISOString()}>{date}</time>
+          <span class="meta-separator" aria-hidden="true">&middot;</span>
+          <span>{readingTime}</span>
+        </span>
+        <ShareButton
+          url={Astro.url.pathname}
+          label={labels.share}
+          copiedLabel={labels.linkCopied}
+          failedLabel={labels.copyFailed}
+        />
+      </div>
+      <div class="article-divider" aria-hidden="true"></div>
+      <div class="article-body"><Content /></div>
+    </article>
+  </div>
+</PageLayout>
+
+<style>
+  .article-page { padding: 80px 20px; }
+  .article-content { width: min(100%, 785px); margin: 0 auto; }
+  .article-content h1 { margin: 0 0 30px; font-size: 3rem; font-weight: 600; line-height: 1.08; }
+  .article-divider { width: 100%; height: 1px; background: var(--divider-line); }
+  .article-meta { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+  .article-meta-text { display: flex; align-items: center; gap: 10px; color: var(--site-muted); font-size: .875rem; letter-spacing: .28em; line-height: 1; }
+  .article-meta-text .meta-separator { color: var(--site-muted); }
+  .article-body { margin-top: 20px; font-family: var(--font-body); font-size: 1.0625rem; line-height: 1.6; }
+  .article-body :global(h1:first-child) { display: none; }
+  .article-body :global(p) { margin: 0 0 34px; }
+  .article-body :global(h2) { margin: 56px 0 20px; font-family: var(--font-heading); font-size: 1.75rem; line-height: 1.15; }
+  .article-body :global(h3) { margin: 40px 0 16px; font-family: var(--font-heading); font-size: 1.25rem; }
+  .article-body :global(ol), .article-body :global(ul) { margin: 0 0 34px; padding-left: 24px; }
+
+  @media (max-width: 760px) {
+    .article-page { padding-top: 40px; }
+    .article-content h1 { margin-bottom: 20px; font-size: 2.25rem; }
+  }
+</style>
