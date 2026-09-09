@@ -67,6 +67,13 @@ function getBase() {
   return import.meta.env.BASE_URL.replace(/\/+$/, '');
 }
 
+// Joins a root-relative path (e.g. "/logo.png") onto the deployment
+// base path, regardless of whether BASE_URL has a trailing slash.
+export function withBase(path: string) {
+  const suffix = path.replace(/^\/+/, '');
+  return `${getBase()}/${suffix}`;
+}
+
 // Strips the deployment base path (e.g. "/mezhdulabs") from an absolute
 // pathname so the rest of the i18n logic can work with root-relative paths.
 function stripBase(pathname: string) {
@@ -80,8 +87,7 @@ function stripBase(pathname: string) {
 
 export function localizePath(locale: Locale, path = '') {
   const suffix = path.replace(/^\/+|\/+$/g, '');
-  const localized = suffix ? `/${locale}/${suffix}` : `/${locale}`;
-  return `${getBase()}${localized}`;
+  return withBase(suffix ? `${locale}/${suffix}` : locale);
 }
 
 export function articlePath(locale: Locale, id: string) {

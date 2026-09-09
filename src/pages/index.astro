@@ -1,3 +1,5 @@
 ---
-return Astro.redirect(`${import.meta.env.BASE_URL}ru/`);
+import { withBase } from '../lib/i18n';
+
+return Astro.redirect(withBase('ru/'));
 ---

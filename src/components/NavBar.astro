@@ -5,6 +5,7 @@ import {
   getLocaleSwitchPath,
   localizePath,
   ui,
+  withBase,
   type Locale,
 } from '../lib/i18n';
 
@@ -34,7 +35,7 @@ const activeIndex = Math.max(items.findIndex((item) => item.path === currentPath
 <header class="site-header" data-navbar>
   <div class="nav-shell">
     <a class="brand" href={localizePath(locale)} aria-label={labels.brandHome}>
-      <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Mezhduly Labs" />
+      <img src={withBase('logo.png')} alt="Mezhduly Labs" />
     </a>
 
     <button class="mobile-menu-toggle" type="button" aria-label={labels.openNavigation} aria-expanded="false" data-open-label={labels.openNavigation} data-close-label={labels.closeNavigation}>
