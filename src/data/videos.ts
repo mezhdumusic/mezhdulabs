@@ -19,6 +19,7 @@ export const videosByLocale = {
       videoUrl: 'https://www.youtube.com/embed/96P25eO0gKU',
       excerpt: 'Видео из коллекции Mezhduly Labs.',
     },
+
   ],
   en: [
     {

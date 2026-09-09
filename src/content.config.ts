@@ -11,6 +11,7 @@ const articles = defineCollection({
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
+    fav: z.boolean().nullable().optional(),
     locale: z.enum(['ru', 'en']).optional(),
     translationOf: z.string().optional(),
     sourceHash: z.string().optional(),

@@ -1,6 +1,7 @@
 ---
 title: MISH as Revealing Content Through Form
 date: 2026-06-09T00:00:00.000Z
+fav: false
 locale: en
 translationOf: article-1
 sourceHash: 920d6767d31138fa78b0a11deda52614efcd55392563da65b209fdc908d073ad

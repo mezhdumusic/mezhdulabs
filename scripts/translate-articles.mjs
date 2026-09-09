@@ -9,7 +9,6 @@ import matter from 'gray-matter';
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const russianDirectory = path.join(projectRoot, 'src', 'content', 'articles', 'ru');
 const englishDirectory = path.join(projectRoot, 'src', 'content', 'articles', 'en');
-const orderFile = path.join(projectRoot, 'src', 'data', 'article-order.ts');
 const envFile = path.join(projectRoot, '.env');
 const defaultModel = 'gemini-3.5-flash-lite';
 
@@ -30,9 +29,6 @@ export function getSourceHash(source) {
   return createHash('sha256').update(normalizeText(source)).digest('hex');
 }
 
-export function parseArticleOrder(source) {
-  return [...source.matchAll(/^\s*(['"])([^'"]+)\1,?\s*$/gm)].map((match) => match[2]);
-}
 
 export function classifyTranslation({ sourceId, sourceHash, translationData, hasTranslation }) {
   if (!hasTranslation) return 'missing';
@@ -49,9 +45,6 @@ async function listMarkdownFiles(directory) {
     .sort((a, b) => a.localeCompare(b));
 }
 
-async function readOrder() {
-  return parseArticleOrder(await readFile(orderFile, 'utf8'));
-}
 
 async function readSource(id) {
   const filePath = path.join(russianDirectory, `${id}.md`);
@@ -66,14 +59,12 @@ async function readSource(id) {
 }
 
 async function scanTranslations() {
-  const [russianFiles, englishFiles, orderedIds] = await Promise.all([
+  const [russianFiles, englishFiles] = await Promise.all([
     listMarkdownFiles(russianDirectory),
     listMarkdownFiles(englishDirectory),
-    readOrder(),
   ]);
   const russianIds = russianFiles.map((file) => file.replace(/\.md$/, ''));
-  const englishIds = englishFiles.map((file) => file.replace(/\.md$/, ''));
-  const orderedSet = new Set(orderedIds);
+  const englishIds = englishFiles.map((file) => file.replace(/\.md$/, '')); 
   const rows = [];
 
   for (const id of russianIds) {
@@ -99,11 +90,6 @@ async function scanTranslations() {
         state = 'invalid';
         details = `cannot parse translation: ${error.message}`;
       }
-    }
-
-    if (!orderedSet.has(id)) {
-      details = details ? `${details}; not in articleOrder` : 'not in articleOrder';
-      state = state === 'ready' ? 'unlisted' : state;
     }
 
     rows.push({ id, state, details, source, translation, translationPath });

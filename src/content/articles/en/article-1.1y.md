@@ -1,6 +1,7 @@
 ---
 title: 'Misha the Fool: Revealing Content Through Form'
 date: 2026-06-09T00:00:00.000Z
+fav: false
 locale: en
 translationOf: article-1.1y
 sourceHash: 9ad4cbd57095eb1f6cad612df30dd4464598f61aff15a5967c0c3cf5bce9ac41

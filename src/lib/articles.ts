@@ -1,5 +1,4 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import { articleOrder } from '../data/article-order';
 import type { Locale } from './i18n';
 
 export type ArticleEntry = CollectionEntry<'articles'>;
@@ -15,24 +14,16 @@ function getEntryLocale(entry: ArticleEntry): Locale | null {
 
 export async function getOrderedArticles(locale: Locale) {
   const entries = await getCollection('articles');
-  const russianIds = new Set(
-    entries.filter((entry) => getEntryLocale(entry) === 'ru').map(getArticleId),
-  );
-  const missingSources = articleOrder.filter((id) => !russianIds.has(id));
 
-  if (missingSources.length) {
-    throw new Error(`Unknown article IDs in articleOrder: ${missingSources.join(', ')}`);
-  }
+  return entries
+    .filter((entry) => getEntryLocale(entry) === locale)
+    .sort((a, b) => {
+      const favoriteDifference = Number(Boolean(b.data.fav)) - Number(Boolean(a.data.fav));
+      if (favoriteDifference !== 0) return favoriteDifference;
 
-  const localizedEntries = new Map(
-    entries
-      .filter((entry) => getEntryLocale(entry) === locale)
-      .map((entry) => [getArticleId(entry), entry]),
-  );
-
-  return articleOrder
-    .map((id) => localizedEntries.get(id))
-    .filter((entry): entry is ArticleEntry => Boolean(entry));
+      const dateDifference = b.data.date.getTime() - a.data.date.getTime();
+      return dateDifference || getArticleId(a).localeCompare(getArticleId(b));
+    });
 }
 
 export async function getArticleIds(locale: Locale) {

@@ -5,7 +5,6 @@ import {
   classifyTranslation,
   getSourceHash,
   normalizeText,
-  parseArticleOrder,
 } from '../scripts/translate-articles.mjs';
 
 test('normalizes line endings before hashing a source article', () => {
@@ -33,10 +32,4 @@ test('classifies translation lifecycle states', () => {
     translationData: { translationOf: 'article-2', sourceHash: 'a' },
     hasTranslation: true,
   }), 'invalid');
-});
-
-test('reads the explicit article order without changing dotted IDs', () => {
-  const order = parseArticleOrder(`export const articleOrder = [\n  'article-1.1y',\n  'istina',\n] as const;`);
-  assert.deepEqual(order, ['article-1.1y', 'istina']);
-  assert.deepEqual(parseArticleOrder('"article-2",'), ['article-2']);
 });
