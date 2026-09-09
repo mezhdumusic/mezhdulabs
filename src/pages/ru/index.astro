@@ -1,5 +1,5 @@
 ---
-import LocalizedHome from '../../components/LocalizedHome.astro';
----
+import { withBase } from '../../lib/i18n';
 
-<LocalizedHome locale="ru" />
+return Astro.redirect(withBase('ru/articles/'));
+---

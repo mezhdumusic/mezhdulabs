@@ -1,6 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
-import { getArticleId } from '../lib/articles';
+import { getArticleSlugMap } from '../lib/articles';
 import {
   getLocaleSwitchPath,
   localizePath,
@@ -17,15 +16,15 @@ const { locale } = Astro.props;
 const labels = ui[locale];
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 const otherLocale: Locale = locale === 'ru' ? 'en' : 'ru';
-const articleEntries = await getCollection('articles');
-const otherArticleIds = new Set(
-  articleEntries
-    .filter((entry) => entry.id.startsWith(`${otherLocale}/`))
-    .map(getArticleId),
-);
-const languagePath = getLocaleSwitchPath(Astro.url.pathname, locale, otherLocale, otherArticleIds);
+const currentSlugById = await getArticleSlugMap(locale);
+const nextSlugById = await getArticleSlugMap(otherLocale);
+const currentIdBySlug = new Map([...currentSlugById].map(([id, slug]) => [slug, id]));
+const languagePath = getLocaleSwitchPath(Astro.url.pathname, locale, otherLocale, {
+  currentIdBySlug,
+  nextSlugById,
+});
 const items = [
-  { label: labels.nav.articles, path: localizePath(locale) },
+  { label: labels.nav.articles, path: localizePath(locale, 'articles') },
   { label: labels.nav.video, path: localizePath(locale, 'video') },
   { label: labels.nav.music, path: localizePath(locale, 'music') },
 ];
@@ -34,7 +33,7 @@ const activeIndex = Math.max(items.findIndex((item) => item.path === currentPath
 
 <header class="site-header" data-navbar>
   <div class="nav-shell">
-    <a class="brand" href={localizePath(locale)} aria-label={labels.brandHome}>
+    <a class="brand" href={localizePath(locale, 'articles')} aria-label={labels.brandHome}>
       <img src={withBase('logo.png')} alt="Mezhduly Labs" />
     </a>
 
@@ -178,7 +177,7 @@ const activeIndex = Math.max(items.findIndex((item) => item.path === currentPath
     .active-indicator { transform: translateX(calc(var(--active-index) * (150px + 12px) + 67px)); }
   }
 
-  @media (max-width: 760px) {
+  @media (max-width: 900px) {
     .site-header { height: 65px; }
     .nav-shell { width: 100%; }
     .brand { position: absolute; top: 0; left: 50%; width: auto; height: 65px; transform: translateX(-50%); }

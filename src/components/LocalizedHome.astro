@@ -6,6 +6,7 @@ import {
   formatArticleDate,
   formatReadingTime,
   getArticleId,
+  getArticleSlugMap,
   getOrderedArticles,
   getReadingTime,
 } from '../lib/articles';
@@ -19,6 +20,7 @@ interface Props {
 const { locale } = Astro.props;
 const labels = ui[locale];
 const articles = await getOrderedArticles(locale);
+const slugById = await getArticleSlugMap(locale);
 const cards = articles.map((article) => ({
   date: formatArticleDate(article.data.date, locale),
   title: article.data.title,
@@ -27,7 +29,7 @@ const cards = articles.map((article) => ({
   shareLabel: labels.share,
   shareCopiedLabel: labels.linkCopied,
   shareFailedLabel: labels.copyFailed,
-  href: articlePath(locale, getArticleId(article)),
+  href: articlePath(locale, slugById.get(getArticleId(article)) ?? getArticleId(article)),
 }));
 ---
 

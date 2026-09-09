@@ -14,6 +14,7 @@ const articles = defineCollection({
     locale: z.enum(['ru', 'en']).optional(),
     translationOf: z.string().optional(),
     sourceHash: z.string().optional(),
+    slug: z.string().optional(),
   }),
 });
 

@@ -96,14 +96,20 @@ export function articlePath(locale: Locale, id: string) {
 
 export function getLocaleFromPath(pathname: string): Locale {
   const segment = stripBase(pathname).split('/').filter(Boolean)[0];
-  return segment === 'en' ? 'en' : 'ru';
+  return segment === 'ru' ? 'ru' : 'en';
 }
 
 export function getLocaleSwitchPath(
   pathname: string,
   currentLocale: Locale,
   nextLocale: Locale,
-  nextArticleIds: ReadonlySet<string>,
+  // Article slugs differ per locale, so switching languages on an article
+  // page requires mapping the current slug to the shared article ID, then
+  // back to the equivalent slug in the target locale.
+  articleSlugs: {
+    currentIdBySlug: ReadonlyMap<string, string>;
+    nextSlugById: ReadonlyMap<string, string>;
+  },
 ) {
   const normalizedPath = stripBase(pathname).replace(/\/+$/, '') || '/';
   const currentPrefix = `/${currentLocale}`;
@@ -115,8 +121,10 @@ export function getLocaleSwitchPath(
   const articleMatch = currentSuffix.match(/^\/articles\/(.+)$/);
 
   if (articleMatch) {
-    const articleId = decodeURIComponent(articleMatch[1]);
-    if (!nextArticleIds.has(articleId)) return localizePath(nextLocale);
+    const currentSlug = decodeURIComponent(articleMatch[1]);
+    const articleId = articleSlugs.currentIdBySlug.get(currentSlug);
+    const nextSlug = articleId ? articleSlugs.nextSlugById.get(articleId) : undefined;
+    return nextSlug ? localizePath(nextLocale, `articles/${nextSlug}`) : localizePath(nextLocale, 'articles');
   }
 
   return localizePath(nextLocale, currentSuffix);

@@ -1,12 +1,13 @@
 ---
 import ArticlePage from '../../../components/ArticlePage.astro';
-import { getArticleId, getOrderedArticles } from '../../../lib/articles';
+import { getArticleId, getArticleSlugMap, getOrderedArticles } from '../../../lib/articles';
 
 export async function getStaticPaths() {
   const locale = 'en' as const;
   const articles = await getOrderedArticles(locale);
+  const slugById = await getArticleSlugMap(locale);
   return articles.map((entry) => ({
-    params: { slug: getArticleId(entry) },
+    params: { slug: slugById.get(getArticleId(entry)) },
     props: { entry },
   }));
 }
